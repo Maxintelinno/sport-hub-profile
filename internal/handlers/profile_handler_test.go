@@ -27,6 +27,7 @@ func TestGetProfile(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/v1/profile", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
+	c.Set("user_id", uint(1))
 
 	mockSvc := &mockProfileService{}
 	h := NewProfileHandler(mockSvc)

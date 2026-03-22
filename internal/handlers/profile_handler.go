@@ -16,8 +16,14 @@ func NewProfileHandler(profileService services.ProfileService) *ProfileHandler {
 }
 
 func (h *ProfileHandler) GetProfile(c echo.Context) error {
-	// For now, assume user ID 1
-	userID := uint(1)
+	// Extract user ID from context (set by JWTMiddleware)
+	userID, ok := c.Get("user_id").(uint)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"message": "User not authenticated",
+		})
+	}
+
 	profile, err := h.profileService.GetProfile(userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{

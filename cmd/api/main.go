@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/maxintelinno/sport-hub-profile/internal/handlers"
+	customMiddleware "github.com/maxintelinno/sport-hub-profile/internal/middleware"
 	"github.com/maxintelinno/sport-hub-profile/internal/repositories"
 	"github.com/maxintelinno/sport-hub-profile/internal/services"
 	"github.com/maxintelinno/sport-hub-profile/pkg/config"
@@ -45,7 +46,10 @@ func main() {
 
 	// Routes
 	e.GET("/health", healthHandler.Check)
-	e.GET("/v1/profile", profileHandler.GetProfile)
+	
+	v1 := e.Group("/v1")
+	v1.Use(customMiddleware.JWTMiddleware(cfg.JwtSecret))
+	v1.GET("/profile", profileHandler.GetProfile)
 
 	// Start server
 	go func() {

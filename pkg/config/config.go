@@ -13,8 +13,9 @@ type Config struct {
 	DBHost  string
 	DBPort  string
 	DBUser  string
-	DBPass  string
-	DBName  string
+	DBPass    string
+	DBName    string
+	JwtSecret string
 }
 
 func LoadConfig() *Config {
@@ -24,13 +25,14 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		AppPort: getEnv("APP_PORT", "8080"),
-		AppEnv:  getEnv("APP_ENV", "development"),
-		DBHost:  getEnv("DB_HOST", "localhost"),
-		DBPort:  getEnv("DB_PORT", "5432"),
-		DBUser:  getEnv("DB_USER", "postgres"),
-		DBPass:  getEnv("DB_PASSWORD", "postgres"),
-		DBName:  getEnv("DB_NAME", "sport_hub_profile"),
+		AppPort:   getEnv("APP_PORT", "8080"),
+		AppEnv:    getEnv("APP_ENV", "development"),
+		DBHost:    getEnv("DB_HOST", "localhost"),
+		DBPort:    getEnv("DB_PORT", "5432"),
+		DBUser:    getEnv("DB_USER", "postgres"),
+		DBPass:    getEnv("DB_PASSWORD", "postgres"),
+		DBName:    getEnv("DB_NAME", "sport_hub_profile"),
+		JwtSecret: getEnv("JWT_SECRET", "secret"),
 	}
 }
 
