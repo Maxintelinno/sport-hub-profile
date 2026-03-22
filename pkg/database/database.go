@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -12,7 +13,13 @@ import (
 func InitDB() (*gorm.DB, error) {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Println("DATABASE_URL not set")
+		dbHost := os.Getenv("DB_HOST")
+		dbPort := os.Getenv("DB_PORT")
+		dbUser := os.Getenv("DB_USER")
+		dbPass := os.Getenv("DB_PASSWORD")
+		dbName := os.Getenv("DB_NAME")
+		dbURL = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Bangkok",
+			dbHost, dbUser, dbPass, dbName, dbPort)
 	}
 
 	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{

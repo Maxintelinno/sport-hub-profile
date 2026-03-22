@@ -11,25 +11,41 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/maxintelinno/sport-hub-profile/internal/handlers"
+	"github.com/maxintelinno/sport-hub-profile/internal/repositories"
+	"github.com/maxintelinno/sport-hub-profile/internal/services"
 	"github.com/maxintelinno/sport-hub-profile/pkg/config"
+	"github.com/maxintelinno/sport-hub-profile/pkg/database"
 )
 
 func main() {
-
 	cfg := config.LoadConfig()
 
 	e := echo.New()
+
+	// Initialize DB
+	db, err := database.InitDB()
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
 
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
+	// Repositories
+	userRepo := repositories.NewUserRepository(db)
+
+	// Services
+	profileService := services.NewProfileService(userRepo)
+
 	// Handlers
 	healthHandler := handlers.NewHealthHandler()
+	profileHandler := handlers.NewProfileHandler(profileService)
 
 	// Routes
 	e.GET("/health", healthHandler.Check)
+	e.GET("/v1/profile", profileHandler.GetProfile)
 
 	// Start server
 	go func() {
@@ -48,12 +64,4 @@ func main() {
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
 	}
-
-	// Start Server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	e.Logger.Fatal(e.Start(":" + port))
 }
