@@ -13,7 +13,7 @@ import (
 
 type mockProfileService struct{}
 
-func (s *mockProfileService) GetProfile(userID uint) (*models.ProfileResponse, error) {
+func (s *mockProfileService) GetProfile(userID string) (*models.ProfileResponse, error) {
 	return &models.ProfileResponse{
 		User: models.UserSummary{
 			Name: "Owner Lastname",
@@ -27,7 +27,7 @@ func TestGetProfile(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/v1/profile", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	c.Set("user_id", uint(1))
+	c.Set("user_id", "1")
 
 	mockSvc := &mockProfileService{}
 	h := NewProfileHandler(mockSvc)

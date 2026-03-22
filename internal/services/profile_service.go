@@ -8,7 +8,7 @@ import (
 )
 
 type ProfileService interface {
-	GetProfile(userID uint) (*models.ProfileResponse, error)
+	GetProfile(userID string) (*models.ProfileResponse, error)
 }
 
 type profileService struct {
@@ -19,7 +19,7 @@ func NewProfileService(userRepo repositories.UserRepository) ProfileService {
 	return &profileService{userRepo: userRepo}
 }
 
-func (s *profileService) GetProfile(userID uint) (*models.ProfileResponse, error) {
+func (s *profileService) GetProfile(userID string) (*models.ProfileResponse, error) {
 	user, err := s.userRepo.GetUserByID(userID)
 	if err != nil {
 		return nil, err

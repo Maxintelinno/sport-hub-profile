@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -30,9 +31,15 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
 				return []byte(secret), nil
 			})
 
-			if err != nil || !token.Valid {
+			if err != nil {
 				return c.JSON(http.StatusUnauthorized, map[string]string{
-					"message": "Invalid or expired token",
+					"message": "Invalid or expired token: " + err.Error(),
+				})
+			}
+
+			if !token.Valid {
+				return c.JSON(http.StatusUnauthorized, map[string]string{
+					"message": "Invalid token",
 				})
 			}
 
@@ -43,15 +50,21 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
 				})
 			}
 
-			// Extract user ID from claims
-			userIDFloat, ok := claims["user_id"].(float64)
-			if !ok {
+			// Extract user ID from claims (flexible handling for user_id or userid)
+			var userID string
+			if id, exists := claims["user_id"]; exists {
+				userID = fmt.Sprintf("%v", id)
+			} else if id, exists := claims["userid"]; exists {
+				userID = fmt.Sprintf("%v", id)
+			}
+
+			if userID == "" {
 				return c.JSON(http.StatusUnauthorized, map[string]string{
-					"message": "Invalid user ID in token",
+					"message": "Invalid user ID in token (missing user_id or userid claim)",
 				})
 			}
 
-			c.Set("user_id", uint(userIDFloat))
+			c.Set("user_id", userID)
 			return next(c)
 		}
 	}

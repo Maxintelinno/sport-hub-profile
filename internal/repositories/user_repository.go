@@ -6,9 +6,9 @@ import (
 )
 
 type UserRepository interface {
-	GetUserByID(id uint) (*models.User, error)
-	GetStatsByUserID(userID uint) (*models.ProfileStats, error)
-	GetRevenueSummaryByUserID(userID uint) (*models.RevenueSummary, error)
+	GetUserByID(id string) (*models.User, error)
+	GetStatsByUserID(userID string) (*models.ProfileStats, error)
+	GetRevenueSummaryByUserID(userID string) (*models.RevenueSummary, error)
 }
 
 type userRepository struct {
@@ -19,7 +19,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) GetUserByID(id uint) (*models.User, error) {
+func (r *userRepository) GetUserByID(id string) (*models.User, error) {
 	var user models.User
 	// For now, return mock data since we might not have the table yet
 	// In a real scenario, we would use: r.db.First(&user, id).Error
@@ -32,7 +32,7 @@ func (r *userRepository) GetUserByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) GetStatsByUserID(userID uint) (*models.ProfileStats, error) {
+func (r *userRepository) GetStatsByUserID(userID string) (*models.ProfileStats, error) {
 	// Mock stats
 	return &models.ProfileStats{
 		FieldCount:   0,
@@ -41,7 +41,7 @@ func (r *userRepository) GetStatsByUserID(userID uint) (*models.ProfileStats, er
 	}, nil
 }
 
-func (r *userRepository) GetRevenueSummaryByUserID(userID uint) (*models.RevenueSummary, error) {
+func (r *userRepository) GetRevenueSummaryByUserID(userID string) (*models.RevenueSummary, error) {
 	// Mock revenue summary
 	return &models.RevenueSummary{
 		Total:   0,
