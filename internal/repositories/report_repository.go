@@ -38,13 +38,13 @@ func (r *reportRepository) GetRevenueReport(ownerID string, period string) (*mod
 	}
 
 	// Get total revenue for the period
-	err := query.Select("COALESCE(SUM(bookings.total_amount), 0)").Scan(&response.TotalRevenue).Error
+	err := query.Session(&gorm.Session{}).Select("COALESCE(SUM(bookings.total_amount), 0)").Scan(&response.TotalRevenue).Error
 	if err != nil {
 		return nil, err
 	}
 
 	// Get breakdown by field
-	err = query.Select("fields.id as field_id, fields.name as field_name, COALESCE(SUM(bookings.total_amount), 0) as revenue, COUNT(bookings.id) as booking_count").
+	err = query.Session(&gorm.Session{}).Select("fields.id as field_id, fields.name as field_name, COALESCE(SUM(bookings.total_amount), 0) as revenue, COUNT(bookings.id) as booking_count").
 		Group("fields.id, fields.name").
 		Order("revenue DESC").
 		Scan(&response.ByField).Error
