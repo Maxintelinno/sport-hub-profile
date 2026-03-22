@@ -88,8 +88,9 @@ func (r *userRepository) GetStatsByUserID(userID string) (*models.ProfileStats, 
 	var totalRevenue float64
 	err = r.db.Table("bookings").
 		Joins("JOIN fields ON fields.id = bookings.field_id").
-		Where("fields.owner_id = ? AND bookings.payment_status = ?", userID, "paid").
-		Select("COALESCE(SUM(total_amount), 0)").
+		Joins("JOIN payments ON payments.booking_id = bookings.id").
+		Where("fields.owner_id = ? AND payments.status = ?", userID, "paid").
+		Select("COALESCE(SUM(payments.amount), 0)").
 		Scan(&totalRevenue).Error
 	if err != nil {
 		log.Printf("UserRepository: Error calculating total revenue: %v", err)
@@ -108,8 +109,9 @@ func (r *userRepository) GetRevenueSummaryByUserID(userID string) (*models.Reven
 	// Total
 	err := r.db.Table("bookings").
 		Joins("JOIN fields ON fields.id = bookings.field_id").
-		Where("fields.owner_id = ? AND bookings.payment_status = ?", userID, "paid").
-		Select("COALESCE(SUM(total_amount), 0)").
+		Joins("JOIN payments ON payments.booking_id = bookings.id").
+		Where("fields.owner_id = ? AND payments.status = ?", userID, "paid").
+		Select("COALESCE(SUM(payments.amount), 0)").
 		Scan(&summary.Total).Error
 	if err != nil {
 		return nil, err
@@ -118,8 +120,9 @@ func (r *userRepository) GetRevenueSummaryByUserID(userID string) (*models.Reven
 	// Daily
 	err = r.db.Table("bookings").
 		Joins("JOIN fields ON fields.id = bookings.field_id").
-		Where("fields.owner_id = ? AND bookings.payment_status = ? AND DATE(bookings.paid_at) = CURRENT_DATE", userID, "paid").
-		Select("COALESCE(SUM(total_amount), 0)").
+		Joins("JOIN payments ON payments.booking_id = bookings.id").
+		Where("fields.owner_id = ? AND payments.status = ? AND DATE(payments.paid_at) = CURRENT_DATE", userID, "paid").
+		Select("COALESCE(SUM(payments.amount), 0)").
 		Scan(&summary.Daily).Error
 	if err != nil {
 		return nil, err
@@ -128,8 +131,9 @@ func (r *userRepository) GetRevenueSummaryByUserID(userID string) (*models.Reven
 	// Monthly
 	err = r.db.Table("bookings").
 		Joins("JOIN fields ON fields.id = bookings.field_id").
-		Where("fields.owner_id = ? AND bookings.payment_status = ? AND DATE_TRUNC('month', bookings.paid_at) = DATE_TRUNC('month', CURRENT_DATE)", userID, "paid").
-		Select("COALESCE(SUM(total_amount), 0)").
+		Joins("JOIN payments ON payments.booking_id = bookings.id").
+		Where("fields.owner_id = ? AND payments.status = ? AND DATE_TRUNC('month', payments.paid_at) = DATE_TRUNC('month', CURRENT_DATE)", userID, "paid").
+		Select("COALESCE(SUM(payments.amount), 0)").
 		Scan(&summary.Monthly).Error
 	if err != nil {
 		return nil, err
@@ -138,8 +142,9 @@ func (r *userRepository) GetRevenueSummaryByUserID(userID string) (*models.Reven
 	// Yearly
 	err = r.db.Table("bookings").
 		Joins("JOIN fields ON fields.id = bookings.field_id").
-		Where("fields.owner_id = ? AND bookings.payment_status = ? AND DATE_TRUNC('year', bookings.paid_at) = DATE_TRUNC('year', CURRENT_DATE)", userID, "paid").
-		Select("COALESCE(SUM(total_amount), 0)").
+		Joins("JOIN payments ON payments.booking_id = bookings.id").
+		Where("fields.owner_id = ? AND payments.status = ? AND DATE_TRUNC('year', payments.paid_at) = DATE_TRUNC('year', CURRENT_DATE)", userID, "paid").
+		Select("COALESCE(SUM(payments.amount), 0)").
 		Scan(&summary.Yearly).Error
 	if err != nil {
 		return nil, err
