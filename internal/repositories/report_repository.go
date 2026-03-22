@@ -57,11 +57,24 @@ func (r *reportRepository) GetRevenueReport(ownerID string, period string) (*mod
 		return nil, err
 	}
 
+	// Get breakdown by sport type
+	err = query.Session(&gorm.Session{}).Select("fields.sport_type, COALESCE(SUM(payments.amount), 0) as revenue, COUNT(bookings.id) as booking_count").
+		Group("fields.sport_type").
+		Order("revenue DESC").
+		Scan(&response.BySportType).Error
+	if err != nil {
+		log.Printf("ReportRepository: Sport type breakdown error: %v", err)
+		return nil, err
+	}
+
 	if response.ByField == nil {
 		response.ByField = []models.RevenueByField{}
 	}
+	if response.BySportType == nil {
+		response.BySportType = []models.RevenueBySportType{}
+	}
 
-	log.Printf("ReportRepository: Successfully fetched report. Total: %v, Breakdown count: %v", response.TotalRevenue, len(response.ByField))
+	log.Printf("ReportRepository: Successfully fetched report. Total: %v, Field count: %v, Sport type count: %v", response.TotalRevenue, len(response.ByField), len(response.BySportType))
 
 	return &response, nil
 }
