@@ -9,6 +9,9 @@ type UserRepository interface {
 	GetUserByID(id string) (*models.User, error)
 	GetStatsByUserID(userID string) (*models.ProfileStats, error)
 	GetRevenueSummaryByUserID(userID string) (*models.RevenueSummary, error)
+	GetFieldCountByOwnerID(ownerID string) (int64, error)
+	GetCourtCountByOwnerID(ownerID string) (int64, error)
+	GetBookingCountByOwnerID(ownerID string) (int64, error)
 }
 
 type userRepository struct {
@@ -32,11 +35,47 @@ func (r *userRepository) GetUserByID(id string) (*models.User, error) {
 	return &user, nil
 }
 
+func (r *userRepository) GetFieldCountByOwnerID(ownerID string) (int64, error) {
+	var count int64
+	err := r.db.Model(&models.Field{}).Where("owner_id = ?", ownerID).Count(&count).Error
+	return count, err
+}
+
+func (r *userRepository) GetCourtCountByOwnerID(ownerID string) (int64, error) {
+	var count int64
+	// Query to count courts belonging to any field owned by the owner
+	err := r.db.Table("field_courts").
+		Joins("JOIN fields ON fields.id = field_courts.field_id").
+		Where("fields.owner_id = ?", ownerID).
+		Count(&count).Error
+	return count, err
+}
+
+func (r *userRepository) GetBookingCountByOwnerID(ownerID string) (int64, error) {
+	var count int64
+	// Query to count bookings for any field owned by the owner
+	err := r.db.Table("bookings").
+		Joins("JOIN fields ON fields.id = bookings.field_id").
+		Where("fields.owner_id = ?", ownerID).
+		Count(&count).Error
+	return count, err
+}
+
 func (r *userRepository) GetStatsByUserID(userID string) (*models.ProfileStats, error) {
-	// Mock stats
+	fieldCount, err := r.GetFieldCountByOwnerID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	bookingCount, err := r.GetBookingCountByOwnerID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Assuming revenue still mocked for now
 	return &models.ProfileStats{
-		FieldCount:   0,
-		BookingCount: 0,
+		FieldCount:   int(fieldCount),
+		BookingCount: int(bookingCount),
 		TotalRevenue: 0,
 	}, nil
 }

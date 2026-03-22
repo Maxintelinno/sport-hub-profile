@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/maxintelinno/sport-hub-profile/internal/models"
@@ -35,6 +36,11 @@ func (s *profileService) GetProfile(userID string) (*models.ProfileResponse, err
 		return nil, err
 	}
 
+	courtCount, err := s.userRepo.GetCourtCountByOwnerID(userID)
+	if err != nil {
+		return nil, err
+	}
+
 	initials := ""
 	if len(user.Name) > 0 {
 		initials = strings.ToUpper(string(user.Name[0]))
@@ -51,8 +57,8 @@ func (s *profileService) GetProfile(userID string) (*models.ProfileResponse, err
 		Stats: *stats,
 		Plan: models.PlanInfo{
 			Name:       "Free Plan",
-			FieldUsage: "1/1",
-			CourtUsage: "2/2",
+			FieldUsage: fmt.Sprintf("%d/1", stats.FieldCount),
+			CourtUsage: fmt.Sprintf("%d/2", courtCount),
 			CanUpgrade: true,
 		},
 		RevenueSummary: *revenue,
