@@ -37,15 +37,18 @@ func main() {
 	// Repositories
 	userRepo := repositories.NewUserRepository(db)
 	reportRepo := repositories.NewReportRepository(db)
+	dashboardRepo := repositories.NewDashboardRepository(db)
 
 	// Services
 	profileService := services.NewProfileService(userRepo)
 	reportService := services.NewReportService(reportRepo)
+	dashboardService := services.NewDashboardService(userRepo, dashboardRepo)
 
 	// Handlers
 	healthHandler := handlers.NewHealthHandler()
 	profileHandler := handlers.NewProfileHandler(profileService)
 	reportHandler := handlers.NewReportHandler(reportService)
+	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
 
 	// Routes
 	e.GET("/health", healthHandler.Check)
@@ -54,6 +57,7 @@ func main() {
 	v1.Use(customMiddleware.JWTMiddleware(cfg.JwtSecret))
 	v1.GET("/profile", profileHandler.GetProfile)
 	v1.GET("/reports/revenue", reportHandler.GetRevenueReport)
+	v1.GET("/owner/dashboard", dashboardHandler.GetDashboard)
 
 	// Start server
 	go func() {
