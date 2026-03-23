@@ -19,7 +19,7 @@ func NewDashboardHandler(dashboardService services.DashboardService) DashboardHa
 }
 
 func (h *dashboardHandler) GetDashboard(c echo.Context) error {
-	userID, ok := c.Get("userID").(string)
+	userID, ok := c.Get("user_id").(string)
 	if !ok || userID == "" {
 		return c.JSON(http.StatusUnauthorized, echo.Map{"message": "Unauthorized or invalid user ID"})
 	}
