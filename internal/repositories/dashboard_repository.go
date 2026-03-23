@@ -22,6 +22,9 @@ func NewDashboardRepository(db *gorm.DB) DashboardRepository {
 }
 
 func (r *dashboardRepository) GetActiveSubscription(userID string) (*models.Subscription, error) {
+	if !isUUID(userID) {
+		return nil, gorm.ErrRecordNotFound
+	}
 	var sub models.Subscription
 	err := r.db.Preload("Plan").
 		Where("user_id = ? AND status IN ?", userID, []string{"trial", "active"}).
@@ -34,6 +37,9 @@ func (r *dashboardRepository) GetActiveSubscription(userID string) (*models.Subs
 }
 
 func (r *dashboardRepository) GetSummaryStats(userID string) (*models.DashboardSummary, error) {
+	if !isUUID(userID) {
+		return &models.DashboardSummary{}, nil
+	}
 	var stats models.DashboardSummary
 
 	// Revenue & Booking Count
@@ -74,6 +80,9 @@ func (r *dashboardRepository) GetSummaryStats(userID string) (*models.DashboardS
 }
 
 func (r *dashboardRepository) GetRevenueTrend(userID string) ([]models.RevenueTrendItem, error) {
+	if !isUUID(userID) {
+		return []models.RevenueTrendItem{}, nil
+	}
 	var results []struct {
 		Date   time.Time
 		Amount float64
@@ -114,6 +123,9 @@ func (r *dashboardRepository) GetRevenueTrend(userID string) ([]models.RevenueTr
 }
 
 func (r *dashboardRepository) GetTodayBookingCount(userID string) (int64, error) {
+	if !isUUID(userID) {
+		return 0, nil
+	}
 	var count int64
 	err := r.db.Table("bookings").
 		Joins("JOIN fields ON fields.id = bookings.field_id").

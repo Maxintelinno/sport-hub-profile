@@ -24,6 +24,9 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepository) GetUserByID(id string) (*models.User, error) {
+	if !isUUID(id) {
+		return nil, gorm.ErrRecordNotFound
+	}
 	var user models.User
 	log.Printf("UserRepository: Fetching user by ID: %s", id)
 	if err := r.db.First(&user, "id = ?", id).Error; err != nil {
@@ -34,6 +37,9 @@ func (r *userRepository) GetUserByID(id string) (*models.User, error) {
 }
 
 func (r *userRepository) GetFieldCountByOwnerID(ownerID string) (int64, error) {
+	if !isUUID(ownerID) {
+		return 0, nil
+	}
 	var count int64
 	log.Printf("UserRepository: Getting field count for owner: %s", ownerID)
 	err := r.db.Model(&models.Field{}).Where("owner_id = ?", ownerID).Count(&count).Error
@@ -45,6 +51,9 @@ func (r *userRepository) GetFieldCountByOwnerID(ownerID string) (int64, error) {
 }
 
 func (r *userRepository) GetCourtCountByOwnerID(ownerID string) (int64, error) {
+	if !isUUID(ownerID) {
+		return 0, nil
+	}
 	var count int64
 	log.Printf("UserRepository: Getting court count for owner: %s", ownerID)
 	// Query to count courts belonging to any field owned by the owner
@@ -60,6 +69,9 @@ func (r *userRepository) GetCourtCountByOwnerID(ownerID string) (int64, error) {
 }
 
 func (r *userRepository) GetBookingCountByOwnerID(ownerID string) (int64, error) {
+	if !isUUID(ownerID) {
+		return 0, nil
+	}
 	var count int64
 	log.Printf("UserRepository: Getting booking count for owner: %s", ownerID)
 	// Query to count bookings for any field owned by the owner
@@ -105,6 +117,9 @@ func (r *userRepository) GetStatsByUserID(userID string) (*models.ProfileStats, 
 
 func (r *userRepository) GetRevenueSummaryByUserID(userID string) (*models.RevenueSummary, error) {
 	var summary models.RevenueSummary
+	if !isUUID(userID) {
+		return &summary, nil
+	}
 
 	// Total
 	err := r.db.Table("bookings").

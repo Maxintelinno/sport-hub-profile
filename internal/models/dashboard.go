@@ -1,13 +1,17 @@
 package models
 
 type DashboardResponse struct {
-	Owner          DashboardOwner     `json:"owner"`
-	Plan           DashboardPlan      `json:"plan"`
-	Summary        DashboardSummary   `json:"summary"`
-	Alerts         []DashboardAlert   `json:"alerts"`
-	NextActions    []DashboardAction  `json:"next_actions"`
-	RevenueTrend7d []RevenueTrendItem `json:"revenue_trend_7d"`
-	Upsell         *DashboardUpsell   `json:"upsell,omitempty"`
+	Owner            DashboardOwner     `json:"owner"`
+	Plan             DashboardPlan      `json:"plan"`
+	Summary          DashboardSummary   `json:"summary"`
+	BookingCount     int64              `json:"booking_count"`
+	FieldCount       int64              `json:"field_count"`
+	RevenueGrowthPct float64            `json:"revenue_growth_pct"`
+	TotalRevenue     float64            `json:"total_revenue"`
+	Alerts           []DashboardAlert   `json:"alerts"`
+	NextActions      []DashboardAction  `json:"next_actions"`
+	RevenueTrend7d   []RevenueTrendItem `json:"revenue_trend_7d"`
+	Upsell           *DashboardUpsell   `json:"upsell,omitempty"`
 }
 
 type DashboardOwner struct {

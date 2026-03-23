@@ -19,6 +19,13 @@ func NewReportRepository(db *gorm.DB) ReportRepository {
 }
 
 func (r *reportRepository) GetRevenueReport(ownerID string, period string) (*models.RevenueReportResponse, error) {
+	if !isUUID(ownerID) {
+		return &models.RevenueReportResponse{
+			Period:      period,
+			ByField:     []models.RevenueByField{},
+			BySportType: []models.RevenueBySportType{},
+		}, nil
+	}
 	var response models.RevenueReportResponse
 	response.Period = period
 

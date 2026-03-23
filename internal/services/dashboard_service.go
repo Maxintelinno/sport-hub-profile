@@ -50,10 +50,14 @@ func (s *dashboardService) GetDashboard(userID string) (*models.DashboardRespons
 			Phone:         user.Phone,
 			AvatarInitial: avatarInitial,
 		},
-		Summary:        *summaryStats,
-		RevenueTrend7d: trend,
-		Alerts:         []models.DashboardAlert{},
-		NextActions:    []models.DashboardAction{},
+		Summary:          *summaryStats,
+		BookingCount:     summaryStats.BookingCount,
+		FieldCount:       summaryStats.FieldCount,
+		RevenueGrowthPct: summaryStats.RevenueGrowthPct,
+		TotalRevenue:     summaryStats.TotalRevenue,
+		RevenueTrend7d:   trend,
+		Alerts:           []models.DashboardAlert{},
+		NextActions:      []models.DashboardAction{},
 	}
 
 	// 3. Plan Info & Business Rules
