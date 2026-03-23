@@ -42,16 +42,16 @@ func (s *profileService) GetProfile(userID string) (*models.ProfileResponse, err
 	}
 
 	initials := ""
-	if len(user.Name) > 0 {
-		initials = strings.ToUpper(string(user.Name[0]))
+	if len(user.Fullname) > 0 {
+		initials = strings.ToUpper(string([]rune(user.Fullname)[0]))
 	}
 
 	return &models.ProfileResponse{
 		User: models.UserSummary{
-			Name:      user.Name,
+			Name:      user.Fullname,
 			Phone:     user.Phone,
 			Role:      user.Role,
-			AvatarURL: user.AvatarURL,
+			AvatarURL: "", // AvatarURL not in schema
 			Initials:  initials,
 		},
 		Stats: *stats,

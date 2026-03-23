@@ -29,8 +29,8 @@ func (s *dashboardService) GetDashboard(userID string) (*models.DashboardRespons
 	}
 
 	avatarInitial := ""
-	if len(user.Name) > 0 {
-		avatarInitial = string([]rune(user.Name)[0])
+	if len(user.Fullname) > 0 {
+		avatarInitial = string([]rune(user.Fullname)[0])
 	}
 
 	// 2. Get Data from Repository
@@ -46,7 +46,7 @@ func (s *dashboardService) GetDashboard(userID string) (*models.DashboardRespons
 	response := &models.DashboardResponse{
 		Owner: models.DashboardOwner{
 			ID:            user.ID,
-			Fullname:      user.Name,
+			Fullname:      user.Fullname,
 			Phone:         user.Phone,
 			AvatarInitial: avatarInitial,
 		},
