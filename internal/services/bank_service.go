@@ -13,15 +13,19 @@ import (
 type BankService interface {
 	GetOwnerBankAccounts(userID string) ([]models.BankAccountResponse, error)
 	AddOwnerBankAccount(userID string, req models.AddBankAccountRequest) (*models.OwnerBankAccount, error)
+	UpdateOwnerBankAccount(userID string, accountID string, req models.UpdateBankAccountRequest) error
+	SetDefaultBankAccount(userID string, accountID string) error
+	DeleteOwnerBankAccount(userID string, accountID string) error
 }
 
 type bankService struct {
-	bankRepo repositories.BankRepository
-	userRepo repositories.UserRepository
+	bankRepo   repositories.BankRepository
+	userRepo   repositories.UserRepository
+	payoutRepo repositories.PayoutRepository
 }
 
-func NewBankService(bankRepo repositories.BankRepository, userRepo repositories.UserRepository) BankService {
-	return &bankService{bankRepo: bankRepo, userRepo: userRepo}
+func NewBankService(bankRepo repositories.BankRepository, userRepo repositories.UserRepository, payoutRepo repositories.PayoutRepository) BankService {
+	return &bankService{bankRepo: bankRepo, userRepo: userRepo, payoutRepo: payoutRepo}
 }
 
 func (s *bankService) GetOwnerBankAccounts(userID string) ([]models.BankAccountResponse, error) {
@@ -115,6 +119,118 @@ func (s *bankService) AddOwnerBankAccount(userID string, req models.AddBankAccou
 	}
 
 	return bankAccount, nil
+}
+
+func (s *bankService) UpdateOwnerBankAccount(userID string, accountID string, req models.UpdateBankAccountRequest) error {
+	// 1. Get original account
+	account, err := s.bankRepo.GetByID(accountID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Verify ownership
+	if account.UserID != userID {
+		return errors.New("unauthorized: account does not belong to you")
+	}
+
+	// 3. Check for sensitive changes
+	sensitiveChanged := false
+	if req.AccountNumber != "" && req.AccountNumber != account.AccountNumber {
+		sensitiveChanged = true
+		account.AccountNumber = req.AccountNumber
+	}
+	if req.PromptpayValue != nil && (account.PromptpayValue == nil || *req.PromptpayValue != *account.PromptpayValue) {
+		sensitiveChanged = true
+		account.PromptpayValue = req.PromptpayValue
+	}
+
+	if sensitiveChanged {
+		account.IsVerified = false
+		account.VerificationStatus = "pending"
+	}
+
+	// 4. Update other fields
+	if req.BankCode != "" {
+		account.BankCode = req.BankCode
+	}
+	if req.BankName != "" {
+		account.BankName = req.BankName
+	}
+	if req.AccountName != "" {
+		account.AccountName = req.AccountName
+	}
+	if req.PromptpayType != nil {
+		account.PromptpayType = req.PromptpayType
+	}
+
+	// 5. Handle default logic
+	if req.IsDefault && !account.IsDefault {
+		err = s.bankRepo.UnsetDefaultByUserID(userID)
+		if err != nil {
+			log.Printf("BankService: Error unsetting defaults: %v", err)
+		}
+		account.IsDefault = true
+	}
+
+	return s.bankRepo.Update(account)
+}
+
+func (s *bankService) SetDefaultBankAccount(userID string, accountID string) error {
+	// 1. Get account
+	account, err := s.bankRepo.GetByID(accountID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Verify ownership
+	if account.UserID != userID {
+		return errors.New("unauthorized: account does not belong to you")
+	}
+
+	// 3. Unset Others
+	err = s.bankRepo.UnsetDefaultByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	// 4. Set this one
+	account.IsDefault = true
+	return s.bankRepo.Update(account)
+}
+
+func (s *bankService) DeleteOwnerBankAccount(userID string, accountID string) error {
+	// 1. Get account
+	account, err := s.bankRepo.GetByID(accountID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Verify ownership
+	if account.UserID != userID {
+		return errors.New("unauthorized: account does not belong to you")
+	}
+
+	// 3. Check if default and has processing payouts
+	if account.IsDefault {
+		hasProcessing, err := s.payoutRepo.HasProcessingPayout(accountID)
+		if err != nil {
+			return err
+		}
+		if hasProcessing {
+			return errors.New("cannot delete default account while payouts are processing")
+		}
+	}
+
+	// 4. Check if only account
+	count, err := s.bankRepo.CountByUserID(userID)
+	if err != nil {
+		return err
+	}
+	if count <= 1 {
+		return errors.New("cannot delete the only bank account. please add another one first.")
+	}
+
+	return s.bankRepo.Delete(accountID)
 }
 
 func maskAccountNumber(num string) string {

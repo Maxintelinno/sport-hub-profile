@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/maxintelinno/sport-hub-profile/internal/models"
@@ -67,4 +68,83 @@ func (h *BankHandler) AddBankAccount(c echo.Context) error {
 	resp.Data.ID = account.ID
 
 	return c.JSON(http.StatusOK, resp)
+}
+
+func (h *BankHandler) UpdateBankAccount(c echo.Context) error {
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "User not authenticated"})
+	}
+
+	accountID := c.Param("id")
+	var req models.UpdateBankAccountRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid request body"})
+	}
+
+	err := h.bankService.UpdateOwnerBankAccount(userID, accountID, req)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "unauthorized") {
+			status = http.StatusForbidden
+		} else if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+		return c.JSON(status, map[string]string{"message": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "success",
+		"message": "Bank account updated successfully",
+	})
+}
+
+func (h *BankHandler) SetDefaultBankAccount(c echo.Context) error {
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "User not authenticated"})
+	}
+
+	accountID := c.Param("id")
+	err := h.bankService.SetDefaultBankAccount(userID, accountID)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "unauthorized") {
+			status = http.StatusForbidden
+		} else if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+		return c.JSON(status, map[string]string{"message": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "success",
+		"message": "Default bank account updated successfully",
+	})
+}
+
+func (h *BankHandler) DeleteBankAccount(c echo.Context) error {
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "User not authenticated"})
+	}
+
+	accountID := c.Param("id")
+	err := h.bankService.DeleteOwnerBankAccount(userID, accountID)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "unauthorized") {
+			status = http.StatusForbidden
+		} else if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		} else if strings.Contains(err.Error(), "cannot delete") {
+			status = http.StatusBadRequest
+		}
+		return c.JSON(status, map[string]string{"message": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "success",
+		"message": "Bank account deleted successfully",
+	})
 }

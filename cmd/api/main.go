@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// Migrations
-	db.AutoMigrate(&models.OTPRequest{}, &models.OwnerBankAccount{})
+	db.AutoMigrate(&models.OTPRequest{}, &models.OwnerBankAccount{}, &models.OwnerSettlement{}, &models.OwnerPayout{})
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -43,13 +43,14 @@ func main() {
 	reportRepo := repositories.NewReportRepository(db)
 	dashboardRepo := repositories.NewDashboardRepository(db)
 	bankRepo := repositories.NewBankRepository(db)
+	payoutRepo := repositories.NewPayoutRepository(db)
 
 	// Services
 	profileService := services.NewProfileService(userRepo)
 	reportService := services.NewReportService(reportRepo)
 	dashboardService := services.NewDashboardService(userRepo, dashboardRepo)
 	authService := services.NewAuthService(userRepo)
-	bankService := services.NewBankService(bankRepo, userRepo)
+	bankService := services.NewBankService(bankRepo, userRepo, payoutRepo)
 
 	// Handlers
 	healthHandler := handlers.NewHealthHandler()
@@ -76,6 +77,9 @@ func main() {
 	// Bank Account routes
 	v1Auth.GET("/owner/bank-accounts", bankHandler.GetBankAccounts)
 	v1Auth.POST("/owner/bank-accounts", bankHandler.AddBankAccount)
+	v1Auth.PUT("/owner/bank-accounts/:id", bankHandler.UpdateBankAccount)
+	v1Auth.DELETE("/owner/bank-accounts/:id", bankHandler.DeleteBankAccount)
+	v1Auth.POST("/owner/bank-accounts/:id/set-default", bankHandler.SetDefaultBankAccount)
 
 	// Start server
 	go func() {

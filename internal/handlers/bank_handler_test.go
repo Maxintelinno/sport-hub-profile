@@ -33,6 +33,21 @@ func (m *MockBankService) AddOwnerBankAccount(userID string, req models.AddBankA
 	return args.Get(0).(*models.OwnerBankAccount), args.Error(1)
 }
 
+func (m *MockBankService) UpdateOwnerBankAccount(userID string, accountID string, req models.UpdateBankAccountRequest) error {
+	args := m.Called(userID, accountID, req)
+	return args.Error(0)
+}
+
+func (m *MockBankService) SetDefaultBankAccount(userID string, accountID string) error {
+	args := m.Called(userID, accountID)
+	return args.Error(0)
+}
+
+func (m *MockBankService) DeleteOwnerBankAccount(userID string, accountID string) error {
+	args := m.Called(userID, accountID)
+	return args.Error(0)
+}
+
 func TestGetBankAccounts(t *testing.T) {
 	e := echo.New()
 	t.Run("Successful retrieval", func(t *testing.T) {
@@ -92,6 +107,84 @@ func TestAddBankAccount(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, "success", resp.Status)
 			assert.Equal(t, "new-acc-id", resp.Data.ID)
+		}
+	})
+}
+
+func TestUpdateBankAccount(t *testing.T) {
+	e := echo.New()
+	t.Run("Successful update", func(t *testing.T) {
+		mockSvc := new(MockBankService)
+		h := NewBankHandler(mockSvc)
+
+		accountID := "acc-1"
+		userID := "owner-123"
+		reqBody := models.UpdateBankAccountRequest{BankCode: "SCB", AccountName: "New Name"}
+		body, _ := json.Marshal(reqBody)
+		
+		req := httptest.NewRequest(http.MethodPut, "/v1/owner/bank-accounts/"+accountID, bytes.NewReader(body))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues(accountID)
+		c.Set("user_id", userID)
+
+		mockSvc.On("UpdateOwnerBankAccount", userID, accountID, reqBody).Return(nil)
+
+		if assert.NoError(t, h.UpdateBankAccount(c)) {
+			assert.Equal(t, http.StatusOK, rec.Code)
+			assert.Contains(t, rec.Body.String(), "success")
+		}
+	})
+}
+
+func TestSetDefaultBankAccount(t *testing.T) {
+	e := echo.New()
+	t.Run("Successful set default", func(t *testing.T) {
+		mockSvc := new(MockBankService)
+		h := NewBankHandler(mockSvc)
+
+		accountID := "acc-1"
+		userID := "owner-123"
+		
+		req := httptest.NewRequest(http.MethodPost, "/v1/owner/bank-accounts/"+accountID+"/set-default", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues(accountID)
+		c.Set("user_id", userID)
+
+		mockSvc.On("SetDefaultBankAccount", userID, accountID).Return(nil)
+
+		if assert.NoError(t, h.SetDefaultBankAccount(c)) {
+			assert.Equal(t, http.StatusOK, rec.Code)
+			assert.Contains(t, rec.Body.String(), "success")
+		}
+	})
+}
+
+func TestDeleteBankAccount(t *testing.T) {
+	e := echo.New()
+	t.Run("Successful deletion", func(t *testing.T) {
+		mockSvc := new(MockBankService)
+		h := NewBankHandler(mockSvc)
+
+		accountID := "acc-1"
+		userID := "owner-123"
+		
+		req := httptest.NewRequest(http.MethodDelete, "/v1/owner/bank-accounts/"+accountID, nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues(accountID)
+		c.Set("user_id", userID)
+
+		mockSvc.On("DeleteOwnerBankAccount", userID, accountID).Return(nil)
+
+		if assert.NoError(t, h.DeleteBankAccount(c)) {
+			assert.Equal(t, http.StatusOK, rec.Code)
+			assert.Contains(t, rec.Body.String(), "success")
 		}
 	})
 }

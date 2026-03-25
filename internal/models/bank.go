@@ -30,6 +30,16 @@ type AddBankAccountRequest struct {
 	IsDefault      bool    `json:"is_default"`
 }
 
+type UpdateBankAccountRequest struct {
+	BankCode       string  `json:"bank_code"`
+	BankName       string  `json:"bank_name"`
+	AccountName    string  `json:"account_name"`
+	AccountNumber  string  `json:"account_number"`
+	PromptpayType  *string `json:"promptpay_type"`
+	PromptpayValue *string `json:"promptpay_value"`
+	IsDefault      bool    `json:"is_default"`
+}
+
 type BankAccountResponse struct {
 	ID                   string    `json:"id"`
 	BankCode             string    `json:"bank_code"`

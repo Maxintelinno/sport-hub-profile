@@ -20,14 +20,46 @@ func (m *MockBankRepository) GetByUserID(userID string) ([]models.OwnerBankAccou
 	return args.Get(0).([]models.OwnerBankAccount), args.Error(1)
 }
 
+func (m *MockBankRepository) GetByID(id string) (*models.OwnerBankAccount, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.OwnerBankAccount), args.Error(1)
+}
+
 func (m *MockBankRepository) Create(bankAccount *models.OwnerBankAccount) error {
 	args := m.Called(bankAccount)
+	return args.Error(0)
+}
+
+func (m *MockBankRepository) Update(bankAccount *models.OwnerBankAccount) error {
+	args := m.Called(bankAccount)
+	return args.Error(0)
+}
+
+func (m *MockBankRepository) Delete(id string) error {
+	args := m.Called(id)
 	return args.Error(0)
 }
 
 func (m *MockBankRepository) UnsetDefaultByUserID(userID string) error {
 	args := m.Called(userID)
 	return args.Error(0)
+}
+
+func (m *MockBankRepository) CountByUserID(userID string) (int64, error) {
+	args := m.Called(userID)
+	return int64(args.Int(0)), args.Error(1)
+}
+
+type MockPayoutRepository struct {
+	mock.Mock
+}
+
+func (m *MockPayoutRepository) HasProcessingPayout(bankAccountID string) (bool, error) {
+	args := m.Called(bankAccountID)
+	return args.Bool(0), args.Error(1)
 }
 
 type BankMockUserRepository struct {
@@ -69,7 +101,8 @@ func TestMasking(t *testing.T) {
 func TestGetOwnerBankAccounts(t *testing.T) {
 	mockBankRepo := new(MockBankRepository)
 	mockUserRepo := new(BankMockUserRepository)
-	s := NewBankService(mockBankRepo, mockUserRepo)
+	mockPayoutRepo := new(MockPayoutRepository)
+	s := NewBankService(mockBankRepo, mockUserRepo, mockPayoutRepo)
 
 	t.Run("Success for owner", func(t *testing.T) {
 		userID := "owner-1"
@@ -92,5 +125,103 @@ func TestGetOwnerBankAccounts(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 		assert.Contains(t, err.Error(), "unauthorized")
+	})
+}
+
+func TestUpdateOwnerBankAccount(t *testing.T) {
+	mockBankRepo := new(MockBankRepository)
+	mockUserRepo := new(BankMockUserRepository)
+	mockPayoutRepo := new(MockPayoutRepository)
+	s := NewBankService(mockBankRepo, mockUserRepo, mockPayoutRepo)
+
+	userID := "owner-1"
+	accountID := "acc-1"
+
+	t.Run("Update sensitive info - resets verification", func(t *testing.T) {
+		original := &models.OwnerBankAccount{ID: accountID, UserID: userID, AccountNumber: "111", IsVerified: true, VerificationStatus: "verified"}
+		mockBankRepo.On("GetByID", accountID).Return(original, nil).Once()
+		
+		req := models.UpdateBankAccountRequest{AccountNumber: "222"}
+		mockBankRepo.On("Update", mock.MatchedBy(func(a *models.OwnerBankAccount) bool {
+			return a.AccountNumber == "222" && a.IsVerified == false && a.VerificationStatus == "pending"
+		})).Return(nil).Once()
+
+		err := s.UpdateOwnerBankAccount(userID, accountID, req)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Update non-sensitive info - keeps verification", func(t *testing.T) {
+		original := &models.OwnerBankAccount{ID: accountID, UserID: userID, BankName: "Bank A", IsVerified: true, VerificationStatus: "verified"}
+		mockBankRepo.On("GetByID", accountID).Return(original, nil).Once()
+		
+		req := models.UpdateBankAccountRequest{BankName: "Bank B"}
+		mockBankRepo.On("Update", mock.MatchedBy(func(a *models.OwnerBankAccount) bool {
+			return a.BankName == "Bank B" && a.IsVerified == true && a.VerificationStatus == "verified"
+		})).Return(nil).Once()
+
+		err := s.UpdateOwnerBankAccount(userID, accountID, req)
+		assert.NoError(t, err)
+	})
+}
+
+func TestSetDefaultBankAccount(t *testing.T) {
+	mockBankRepo := new(MockBankRepository)
+	mockUserRepo := new(BankMockUserRepository)
+	mockPayoutRepo := new(MockPayoutRepository)
+	s := NewBankService(mockBankRepo, mockUserRepo, mockPayoutRepo)
+
+	userID := "owner-1"
+	accountID := "acc-1"
+
+	t.Run("Success", func(t *testing.T) {
+		account := &models.OwnerBankAccount{ID: accountID, UserID: userID, IsDefault: false}
+		mockBankRepo.On("GetByID", accountID).Return(account, nil).Once()
+		mockBankRepo.On("UnsetDefaultByUserID", userID).Return(nil).Once()
+		mockBankRepo.On("Update", mock.MatchedBy(func(a *models.OwnerBankAccount) bool {
+			return a.ID == accountID && a.IsDefault == true
+		})).Return(nil).Once()
+
+		err := s.SetDefaultBankAccount(userID, accountID)
+		assert.NoError(t, err)
+	})
+}
+
+func TestDeleteOwnerBankAccount(t *testing.T) {
+	mockBankRepo := new(MockBankRepository)
+	mockUserRepo := new(BankMockUserRepository)
+	mockPayoutRepo := new(MockPayoutRepository)
+	s := NewBankService(mockBankRepo, mockUserRepo, mockPayoutRepo)
+
+	userID := "owner-1"
+	accountID := "acc-1"
+
+	t.Run("Cannot delete only account", func(t *testing.T) {
+		account := &models.OwnerBankAccount{ID: accountID, UserID: userID}
+		mockBankRepo.On("GetByID", accountID).Return(account, nil).Once()
+		mockBankRepo.On("CountByUserID", userID).Return(1, nil).Once()
+
+		err := s.DeleteOwnerBankAccount(userID, accountID)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "only bank account")
+	})
+
+	t.Run("Cannot delete default with processing payouts", func(t *testing.T) {
+		account := &models.OwnerBankAccount{ID: accountID, UserID: userID, IsDefault: true}
+		mockBankRepo.On("GetByID", accountID).Return(account, nil).Once()
+		mockPayoutRepo.On("HasProcessingPayout", accountID).Return(true, nil).Once()
+
+		err := s.DeleteOwnerBankAccount(userID, accountID)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "payouts are processing")
+	})
+
+	t.Run("Success delete", func(t *testing.T) {
+		account := &models.OwnerBankAccount{ID: accountID, UserID: userID, IsDefault: false}
+		mockBankRepo.On("GetByID", accountID).Return(account, nil).Once()
+		mockBankRepo.On("CountByUserID", userID).Return(2, nil).Once()
+		mockBankRepo.On("Delete", accountID).Return(nil).Once()
+
+		err := s.DeleteOwnerBankAccount(userID, accountID)
+		assert.NoError(t, err)
 	})
 }
