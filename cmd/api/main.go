@@ -56,13 +56,16 @@ func main() {
 	e.GET("/health", healthHandler.Check)
 	
 	v1 := e.Group("/v1")
+	// Public routes
 	v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
+	v1.POST("/auth/check-phone", authHandler.CheckPhone)
 	
-	v1Authenticated := v1.Group("")
-	v1Authenticated.Use(customMiddleware.JWTMiddleware(cfg.JwtSecret))
-	v1Authenticated.GET("/profile", profileHandler.GetProfile)
-	v1Authenticated.GET("/reports/revenue", reportHandler.GetRevenueReport)
-	v1Authenticated.GET("/owner/dashboard", dashboardHandler.GetDashboard)
+	// Authenticated routes
+	v1Auth := e.Group("/v1")
+	v1Auth.Use(customMiddleware.JWTMiddleware(cfg.JwtSecret))
+	v1Auth.GET("/profile", profileHandler.GetProfile)
+	v1Auth.GET("/reports/revenue", reportHandler.GetRevenueReport)
+	v1Auth.GET("/owner/dashboard", dashboardHandler.GetDashboard)
 
 	// Start server
 	go func() {

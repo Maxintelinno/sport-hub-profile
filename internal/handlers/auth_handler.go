@@ -10,6 +10,7 @@ import (
 
 type AuthHandler interface {
 	ForgotPassword(c echo.Context) error
+	CheckPhone(c echo.Context) error
 }
 
 type authHandler struct {
@@ -43,4 +44,26 @@ func (h *authHandler) ForgotPassword(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, models.AuthResponse{Message: "Password updated successfully"})
+}
+
+func (h *authHandler) CheckPhone(c echo.Context) error {
+	var req models.CheckPhoneRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.AuthResponse{Message: "Invalid request body"})
+	}
+
+	if req.Phone == "" {
+		return c.JSON(http.StatusBadRequest, models.AuthResponse{Message: "Phone is required"})
+	}
+
+	exists, err := h.authService.CheckPhone(req.Phone)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.AuthResponse{Message: "Error checking phone"})
+	}
+
+	if !exists {
+		return c.JSON(http.StatusNotFound, models.AuthResponse{Message: "Phone number not registered"})
+	}
+
+	return c.JSON(http.StatusOK, models.AuthResponse{Message: "Phone number is registered"})
 }

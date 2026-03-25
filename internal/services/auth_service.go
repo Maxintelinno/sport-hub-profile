@@ -10,6 +10,7 @@ import (
 
 type AuthService interface {
 	ForgotPassword(phone string, newPassword string) error
+	CheckPhone(phone string) (bool, error)
 }
 
 type authService struct {
@@ -46,4 +47,14 @@ func (s *authService) ForgotPassword(phone string, newPassword string) error {
 
 	log.Printf("AuthService: Password updated successfully for phone: %s", phone)
 	return nil
+}
+
+func (s *authService) CheckPhone(phone string) (bool, error) {
+	log.Printf("AuthService: Checking if phone exists: %s", phone)
+	_, err := s.userRepo.GetUserByPhone(phone)
+	if err != nil {
+		log.Printf("AuthService: Phone %s not found: %v", phone, err)
+		return false, nil // Phone not found is not an error here, just return false
+	}
+	return true, nil
 }
