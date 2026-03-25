@@ -13,6 +13,8 @@ type UserRepository interface {
 	GetFieldCountByOwnerID(ownerID string) (int64, error)
 	GetCourtCountByOwnerID(ownerID string) (int64, error)
 	GetBookingCountByOwnerID(ownerID string) (int64, error)
+	GetUserByPhone(phone string) (*models.User, error)
+	UpdatePasswordByPhone(phone string, passwordHash string) error
 }
 
 type userRepository struct {
@@ -166,4 +168,26 @@ func (r *userRepository) GetRevenueSummaryByUserID(userID string) (*models.Reven
 	}
 
 	return &summary, nil
+}
+func (r *userRepository) GetUserByPhone(phone string) (*models.User, error) {
+	var user models.User
+	log.Printf("UserRepository: Fetching user by phone: %s", phone)
+	if err := r.db.First(&user, "phone = ?", phone).Error; err != nil {
+		log.Printf("UserRepository: Error fetching user by phone %s: %v", phone, err)
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userRepository) UpdatePasswordByPhone(phone string, passwordHash string) error {
+	log.Printf("UserRepository: Updating password for phone: %s", phone)
+	result := r.db.Model(&models.User{}).Where("phone = ?", phone).Update("password_hash", passwordHash)
+	if result.Error != nil {
+		log.Printf("UserRepository: Error updating password for phone %s: %v", phone, result.Error)
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

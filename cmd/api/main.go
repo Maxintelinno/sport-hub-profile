@@ -43,21 +43,26 @@ func main() {
 	profileService := services.NewProfileService(userRepo)
 	reportService := services.NewReportService(reportRepo)
 	dashboardService := services.NewDashboardService(userRepo, dashboardRepo)
+	authService := services.NewAuthService(userRepo)
 
 	// Handlers
 	healthHandler := handlers.NewHealthHandler()
 	profileHandler := handlers.NewProfileHandler(profileService)
 	reportHandler := handlers.NewReportHandler(reportService)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
+	authHandler := handlers.NewAuthHandler(authService)
 
 	// Routes
 	e.GET("/health", healthHandler.Check)
 	
 	v1 := e.Group("/v1")
-	v1.Use(customMiddleware.JWTMiddleware(cfg.JwtSecret))
-	v1.GET("/profile", profileHandler.GetProfile)
-	v1.GET("/reports/revenue", reportHandler.GetRevenueReport)
-	v1.GET("/owner/dashboard", dashboardHandler.GetDashboard)
+	v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
+	
+	v1Authenticated := v1.Group("")
+	v1Authenticated.Use(customMiddleware.JWTMiddleware(cfg.JwtSecret))
+	v1Authenticated.GET("/profile", profileHandler.GetProfile)
+	v1Authenticated.GET("/reports/revenue", reportHandler.GetRevenueReport)
+	v1Authenticated.GET("/owner/dashboard", dashboardHandler.GetDashboard)
 
 	// Start server
 	go func() {
