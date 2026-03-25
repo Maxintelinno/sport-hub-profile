@@ -47,9 +47,10 @@ type BankAccountResponse struct {
 }
 
 type BankAccountListResponse struct {
-	Status  string                `json:"status"`
-	Message string                `json:"message"`
-	Data    []BankAccountResponse `json:"data"`
+	Status         string                `json:"status"`
+	Message        string                `json:"message"`
+	HasBankAccount bool                  `json:"has_bank_account"`
+	Data           []BankAccountResponse `json:"data"`
 }
 
 type BankAccountCreateResponse struct {

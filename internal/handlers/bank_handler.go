@@ -31,9 +31,10 @@ func (h *BankHandler) GetBankAccounts(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, models.BankAccountListResponse{
-		Status:  "success",
-		Message: "Bank accounts retrieved successfully",
-		Data:    accounts,
+		Status:         "success",
+		Message:        "Bank accounts retrieved successfully",
+		HasBankAccount: len(accounts) > 0,
+		Data:           accounts,
 	})
 }
 

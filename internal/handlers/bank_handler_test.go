@@ -58,6 +58,7 @@ func TestGetBankAccounts(t *testing.T) {
 			err := json.Unmarshal(rec.Body.Bytes(), &resp)
 			assert.NoError(t, err)
 			assert.Equal(t, "success", resp.Status)
+			assert.True(t, resp.HasBankAccount)
 			assert.Equal(t, 1, len(resp.Data))
 			assert.Equal(t, "xxx-x-12345-x", resp.Data[0].AccountNumberMasked)
 		}
