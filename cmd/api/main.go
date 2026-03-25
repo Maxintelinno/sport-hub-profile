@@ -55,10 +55,9 @@ func main() {
 	// Routes
 	e.GET("/health", healthHandler.Check)
 	
-	v1 := e.Group("/v1")
 	// Public routes
-	v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
-	v1.POST("/auth/check-phone", authHandler.CheckPhone)
+	e.POST("/v1/auth/forgot-password", authHandler.ForgotPassword)
+	e.POST("/v1/auth/check-phone", authHandler.CheckPhone)
 	
 	// Authenticated routes
 	v1Auth := e.Group("/v1")
