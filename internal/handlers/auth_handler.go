@@ -66,7 +66,7 @@ func (h *authHandler) CheckPhone(c echo.Context) error {
 
 	if !exists {
 		return c.JSON(http.StatusNotFound, models.CheckPhoneResponse{
-			Message: "Phone number not registered",
+			Message: "ไม่มีเบอร์โทรนี้ในระบบ กรุณาตรวจสอบใหม่อีกครั้ง",
 			IsFound: false,
 		})
 	}
