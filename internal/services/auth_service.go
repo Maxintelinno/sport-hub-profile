@@ -1,9 +1,14 @@
 package services
 
 import (
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"log"
+	"math/big"
+	"time"
 
+	"github.com/maxintelinno/sport-hub-profile/internal/models"
 	"github.com/maxintelinno/sport-hub-profile/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -56,5 +61,51 @@ func (s *authService) CheckPhone(phone string) (bool, error) {
 		log.Printf("AuthService: Phone %s not found: %v", phone, err)
 		return false, nil // Phone not found is not an error here, just return false
 	}
+
+	// Phone exists, proceed with OTP logic
+	log.Printf("AuthService: Phone %s exists, initiating OTP process", phone)
+
+	// 1. Clean up old OTPs for this phone
+	err = s.userRepo.CleanupOTPs(phone)
+	if err != nil {
+		log.Printf("AuthService: Error cleaning up old OTPs for %s: %v", phone, err)
+		// We can continue even if cleanup fails, but log it
+	}
+
+	// 2. Generate 6-digit OTP
+	otp, err := s.generateOTP()
+	if err != nil {
+		log.Printf("AuthService: Error generating OTP for %s: %v", phone, err)
+		return true, err
+	}
+	log.Printf("AuthService: Generated OTP for %s (for dev/log): %s", phone, otp)
+
+	// 3. Hash OTP
+	otpHash, err := bcrypt.GenerateFromPassword([]byte(otp), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("AuthService: Error hashing OTP for %s: %v", phone, err)
+		return true, err
+	}
+
+	// 4. Save OTP request
+	otpRequest := &models.OTPRequest{
+		Phone:     phone,
+		OTPHash:   string(otpHash),
+		ExpiresAt: time.Now().Add(5 * time.Minute),
+	}
+	err = s.userRepo.CreateOTP(otpRequest)
+	if err != nil {
+		log.Printf("AuthService: Error saving OTP request for %s: %v", phone, err)
+		return true, err
+	}
+
 	return true, nil
+}
+
+func (s *authService) generateOTP() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", n), nil
 }

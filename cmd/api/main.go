@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/maxintelinno/sport-hub-profile/internal/handlers"
 	customMiddleware "github.com/maxintelinno/sport-hub-profile/internal/middleware"
+	"github.com/maxintelinno/sport-hub-profile/internal/models"
 	"github.com/maxintelinno/sport-hub-profile/internal/repositories"
 	"github.com/maxintelinno/sport-hub-profile/internal/services"
 	"github.com/maxintelinno/sport-hub-profile/pkg/config"
@@ -28,6 +29,9 @@ func main() {
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
+
+	// Migrations
+	db.AutoMigrate(&models.OTPRequest{})
 
 	// Middleware
 	e.Use(middleware.Logger())

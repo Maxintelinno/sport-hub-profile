@@ -70,7 +70,7 @@ func TestCheckPhone(t *testing.T) {
 			err := json.Unmarshal(rec.Body.Bytes(), &resp)
 			assert.NoError(t, err)
 			assert.False(t, resp.IsFound)
-			assert.Equal(t, "Phone number not registered", resp.Message)
+			assert.Equal(t, "ไม่มีเบอร์โทรนี้ในระบบ กรุณาตรวจสอบใหม่อีกครั้ง", resp.Message)
 		}
 	})
 }

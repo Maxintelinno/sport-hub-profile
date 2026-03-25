@@ -15,6 +15,8 @@ type UserRepository interface {
 	GetBookingCountByOwnerID(ownerID string) (int64, error)
 	GetUserByPhone(phone string) (*models.User, error)
 	UpdatePasswordByPhone(phone string, passwordHash string) error
+	CleanupOTPs(phone string) error
+	CreateOTP(otp *models.OTPRequest) error
 }
 
 type userRepository struct {
@@ -190,4 +192,22 @@ func (r *userRepository) UpdatePasswordByPhone(phone string, passwordHash string
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+func (r *userRepository) CleanupOTPs(phone string) error {
+	log.Printf("UserRepository: Cleaning up old OTPs for phone: %s", phone)
+	err := r.db.Where("phone = ?", phone).Delete(&models.OTPRequest{}).Error
+	if err != nil {
+		log.Printf("UserRepository: Error cleaning up OTPs for phone %s: %v", phone, err)
+	}
+	return err
+}
+
+func (r *userRepository) CreateOTP(otp *models.OTPRequest) error {
+	log.Printf("UserRepository: Creating new OTP for phone: %s", otp.Phone)
+	err := r.db.Create(otp).Error
+	if err != nil {
+		log.Printf("UserRepository: Error creating OTP for phone %s: %v", otp.Phone, err)
+	}
+	return err
 }
