@@ -12,3 +12,8 @@ type AuthResponse struct {
 type CheckPhoneRequest struct {
 	Phone string `json:"phone" validate:"required"`
 }
+
+type CheckPhoneResponse struct {
+	Message string `json:"message"`
+	IsFound bool   `json:"isFound"`
+}

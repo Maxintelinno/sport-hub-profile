@@ -58,12 +58,21 @@ func (h *authHandler) CheckPhone(c echo.Context) error {
 
 	exists, err := h.authService.CheckPhone(req.Phone)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, models.AuthResponse{Message: "Error checking phone"})
+		return c.JSON(http.StatusInternalServerError, models.CheckPhoneResponse{
+			Message: "Error checking phone",
+			IsFound: false,
+		})
 	}
 
 	if !exists {
-		return c.JSON(http.StatusNotFound, models.AuthResponse{Message: "Phone number not registered"})
+		return c.JSON(http.StatusNotFound, models.CheckPhoneResponse{
+			Message: "Phone number not registered",
+			IsFound: false,
+		})
 	}
 
-	return c.JSON(http.StatusOK, models.AuthResponse{Message: "Phone number is registered"})
+	return c.JSON(http.StatusOK, models.CheckPhoneResponse{
+		Message: "Phone number is registered",
+		IsFound: true,
+	})
 }
