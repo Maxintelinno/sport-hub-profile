@@ -9,6 +9,7 @@ import (
 
 type OwnerStaffRepository interface {
 	GetStaffByOwnerID(ownerID string) ([]models.OwnerStaffResponse, error)
+	UpdateStaffStatus(ownerID string, staffUserID string, status string) error
 }
 
 type ownerStaffRepository struct {
@@ -40,4 +41,36 @@ func (r *ownerStaffRepository) GetStaffByOwnerID(ownerID string) ([]models.Owner
 	}
 
 	return staff, nil
+}
+
+func (r *ownerStaffRepository) UpdateStaffStatus(ownerID string, staffUserID string, status string) error {
+	if !isUUID(ownerID) || !isUUID(staffUserID) {
+		return gorm.ErrRecordNotFound
+	}
+
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Update owner_staffs first to check if owner owns this staff
+		log.Printf("OwnerStaffRepository: Updating status to %s for staff %s by owner %s", status, staffUserID, ownerID)
+		
+		result := tx.Model(&models.OwnerStaff{}).
+			Where("owner_user_id = ? AND staff_user_id = ?", ownerID, staffUserID).
+			Update("status", status)
+		
+		if result.Error != nil {
+			return result.Error
+		}
+		
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+
+		// Update users
+		if err := tx.Model(&models.User{}).
+			Where("id = ?", staffUserID).
+			Update("status", status).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }

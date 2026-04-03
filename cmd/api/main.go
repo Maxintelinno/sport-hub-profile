@@ -84,6 +84,7 @@ func main() {
 	v1Auth.DELETE("/owner/bank-accounts/:id", bankHandler.DeleteBankAccount)
 	v1Auth.POST("/owner/bank-accounts/:id/set-default", bankHandler.SetDefaultBankAccount)
 	v1Auth.GET("/owner/staff", ownerStaffHandler.GetStaff)
+	v1Auth.PUT("/owner/staff/:id/deactivate", ownerStaffHandler.DeactivateStaff)
 
 	// Start server
 	go func() {

@@ -33,3 +33,35 @@ func (h *OwnerStaffHandler) GetStaff(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, staff)
 }
+
+func (h *OwnerStaffHandler) DeactivateStaff(c echo.Context) error {
+	// Extract user ID from context (set by JWTMiddleware)
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"message": "User not authenticated",
+		})
+	}
+
+	staffUserID := c.Param("id")
+	if staffUserID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"message": "Staff user ID is required",
+		})
+	}
+
+	err := h.staffService.DeactivateStaff(userID, staffUserID)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "record not found" {
+			status = http.StatusNotFound
+		}
+		return c.JSON(status, map[string]string{
+			"message": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "Staff member deactivated successfully",
+	})
+}
