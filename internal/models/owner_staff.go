@@ -17,6 +17,7 @@ type OwnerStaffResponse struct {
 	OwnerUserID string    `json:"owner_user_id"`
 	StaffUserID string    `json:"staff_user_id"`
 	Username    string    `json:"username"`
+	Fullname    string    `json:"fullname"`
 	Phone       string    `json:"phone"`
 	RoleCode    string    `json:"role_code"`
 	Status      string    `json:"status"`
