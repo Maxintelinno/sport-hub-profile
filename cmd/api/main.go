@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// Migrations
-	db.AutoMigrate(&models.OTPRequest{}, &models.OwnerBankAccount{}, &models.OwnerSettlement{}, &models.OwnerPayout{})
+	db.AutoMigrate(&models.OTPRequest{}, &models.OwnerBankAccount{}, &models.OwnerSettlement{}, &models.OwnerPayout{}, &models.OwnerStaff{})
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -44,6 +44,7 @@ func main() {
 	dashboardRepo := repositories.NewDashboardRepository(db)
 	bankRepo := repositories.NewBankRepository(db)
 	payoutRepo := repositories.NewPayoutRepository(db)
+	ownerStaffRepo := repositories.NewOwnerStaffRepository(db)
 
 	// Services
 	profileService := services.NewProfileService(userRepo)
@@ -51,6 +52,7 @@ func main() {
 	dashboardService := services.NewDashboardService(userRepo, dashboardRepo)
 	authService := services.NewAuthService(userRepo)
 	bankService := services.NewBankService(bankRepo, userRepo, payoutRepo)
+	ownerStaffService := services.NewOwnerStaffService(ownerStaffRepo)
 
 	// Handlers
 	healthHandler := handlers.NewHealthHandler()
@@ -59,6 +61,7 @@ func main() {
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
 	authHandler := handlers.NewAuthHandler(authService)
 	bankHandler := handlers.NewBankHandler(bankService)
+	ownerStaffHandler := handlers.NewOwnerStaffHandler(ownerStaffService)
 
 	// Routes
 	e.GET("/health", healthHandler.Check)
@@ -80,6 +83,7 @@ func main() {
 	v1Auth.PUT("/owner/bank-accounts/:id", bankHandler.UpdateBankAccount)
 	v1Auth.DELETE("/owner/bank-accounts/:id", bankHandler.DeleteBankAccount)
 	v1Auth.POST("/owner/bank-accounts/:id/set-default", bankHandler.SetDefaultBankAccount)
+	v1Auth.GET("/owner/staff", ownerStaffHandler.GetStaff)
 
 	// Start server
 	go func() {
