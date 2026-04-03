@@ -27,6 +27,16 @@ func (m *MockAuthService) CheckPhone(phone string) (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockAuthService) UpdatePassword(phone, newPassword string) error {
+	args := m.Called(phone, newPassword)
+	return args.Error(0)
+}
+
+func (m *MockAuthService) UpdatePin(phone, newPin string) error {
+	args := m.Called(phone, newPin)
+	return args.Error(0)
+}
+
 func TestCheckPhone(t *testing.T) {
 	e := echo.New()
 

@@ -11,6 +11,8 @@ import (
 type AuthHandler interface {
 	ForgotPassword(c echo.Context) error
 	CheckPhone(c echo.Context) error
+	UpdatePassword(c echo.Context) error
+	UpdatePin(c echo.Context) error
 }
 
 type authHandler struct {
@@ -75,4 +77,49 @@ func (h *authHandler) CheckPhone(c echo.Context) error {
 		Message: "Phone number is registered",
 		IsFound: true,
 	})
+}
+func (h *authHandler) UpdatePassword(c echo.Context) error {
+	var req models.UpdatePasswordRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.AuthResponse{Message: "Invalid request body"})
+	}
+
+	if req.Phone == "" || req.NewPassword == "" {
+		return c.JSON(http.StatusBadRequest, models.AuthResponse{Message: "Phone and new_password are required"})
+	}
+
+	err := h.authService.UpdatePassword(req.Phone, req.NewPassword)
+	if err != nil {
+		if err.Error() == "user not found" {
+			return c.JSON(http.StatusNotFound, models.AuthResponse{Message: "User not found"})
+		}
+		return c.JSON(http.StatusInternalServerError, models.AuthResponse{Message: "Error updating password"})
+	}
+
+	return c.JSON(http.StatusOK, models.AuthResponse{Message: "Password updated successfully"})
+}
+
+func (h *authHandler) UpdatePin(c echo.Context) error {
+	var req models.UpdatePinRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.AuthResponse{Message: "Invalid request body"})
+	}
+
+	if req.Phone == "" || req.NewPin == "" {
+		return c.JSON(http.StatusBadRequest, models.AuthResponse{Message: "Phone and new_pin are required"})
+	}
+
+	if len(req.NewPin) != 6 {
+		return c.JSON(http.StatusBadRequest, models.AuthResponse{Message: "PIN must be exactly 6 digits"})
+	}
+
+	err := h.authService.UpdatePin(req.Phone, req.NewPin)
+	if err != nil {
+		if err.Error() == "user not found" {
+			return c.JSON(http.StatusNotFound, models.AuthResponse{Message: "User not found"})
+		}
+		return c.JSON(http.StatusInternalServerError, models.AuthResponse{Message: "Error updating PIN"})
+	}
+
+	return c.JSON(http.StatusOK, models.AuthResponse{Message: "PIN updated successfully"})
 }

@@ -82,6 +82,7 @@ func (m *BankMockUserRepository) GetCourtCountByOwnerID(ownerID string) (int64, 
 func (m *BankMockUserRepository) GetBookingCountByOwnerID(ownerID string) (int64, error) { return 0, nil }
 func (m *BankMockUserRepository) GetUserByPhone(phone string) (*models.User, error) { return nil, nil }
 func (m *BankMockUserRepository) UpdatePasswordByPhone(phone string, passwordHash string) error { return nil }
+func (m *BankMockUserRepository) UpdatePinByPhone(phone string, pinHash string) error { return nil }
 func (m *BankMockUserRepository) CleanupOTPs(phone string) error { return nil }
 func (m *BankMockUserRepository) CreateOTP(otp *models.OTPRequest) error { return nil }
 

@@ -65,6 +65,11 @@ func (m *MockUserRepository) UpdatePasswordByPhone(phone string, passwordHash st
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) UpdatePinByPhone(phone string, pinHash string) error {
+	args := m.Called(phone, pinHash)
+	return args.Error(0)
+}
+
 func (m *MockUserRepository) CleanupOTPs(phone string) error {
 	args := m.Called(phone)
 	return args.Error(0)

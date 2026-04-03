@@ -7,6 +7,7 @@ type User struct {
 	Phone        string    `gorm:"type:text;unique;not null" json:"phone"`
 	Username     string    `gorm:"type:text;unique;not null" json:"username"`
 	PasswordHash string    `gorm:"type:text;not null" json:"password_hash"`
+	PinHash      string    `gorm:"type:text" json:"pin_hash"`
 	Fullname     string    `gorm:"type:text;not null" json:"fullname"`
 	Province     string    `gorm:"type:varchar(100);not null" json:"province"`
 	District     string    `gorm:"type:varchar(100);not null" json:"district"`

@@ -16,6 +16,8 @@ import (
 type AuthService interface {
 	ForgotPassword(phone string, newPassword string) error
 	CheckPhone(phone string) (bool, error)
+	UpdatePassword(phone string, newPassword string) error
+	UpdatePin(phone string, newPin string) error
 }
 
 type authService struct {
@@ -100,6 +102,42 @@ func (s *authService) CheckPhone(phone string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (s *authService) UpdatePassword(phone string, newPassword string) error {
+	log.Printf("AuthService: Updating password for phone: %s", phone)
+	
+	// Check if user exists
+	_, err := s.userRepo.GetUserByPhone(phone)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.userRepo.UpdatePasswordByPhone(phone, string(hashedPassword))
+}
+
+func (s *authService) UpdatePin(phone string, newPin string) error {
+	log.Printf("AuthService: Updating PIN for phone: %s", phone)
+	
+	// Check if user exists
+	_, err := s.userRepo.GetUserByPhone(phone)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	// Hash PIN (using bcrypt as well for security)
+	hashedPin, err := bcrypt.GenerateFromPassword([]byte(newPin), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.userRepo.UpdatePinByPhone(phone, string(hashedPin))
 }
 
 func (s *authService) generateOTP() (string, error) {

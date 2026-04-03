@@ -15,6 +15,7 @@ type UserRepository interface {
 	GetBookingCountByOwnerID(ownerID string) (int64, error)
 	GetUserByPhone(phone string) (*models.User, error)
 	UpdatePasswordByPhone(phone string, passwordHash string) error
+	UpdatePinByPhone(phone string, pinHash string) error
 	CleanupOTPs(phone string) error
 	CreateOTP(otp *models.OTPRequest) error
 }
@@ -186,6 +187,19 @@ func (r *userRepository) UpdatePasswordByPhone(phone string, passwordHash string
 	result := r.db.Model(&models.User{}).Where("phone = ?", phone).Update("password_hash", passwordHash)
 	if result.Error != nil {
 		log.Printf("UserRepository: Error updating password for phone %s: %v", phone, result.Error)
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (r *userRepository) UpdatePinByPhone(phone string, pinHash string) error {
+	log.Printf("UserRepository: Updating PIN for phone: %s", phone)
+	result := r.db.Model(&models.User{}).Where("phone = ?", phone).Update("pin_hash", pinHash)
+	if result.Error != nil {
+		log.Printf("UserRepository: Error updating PIN for phone %s: %v", phone, result.Error)
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
