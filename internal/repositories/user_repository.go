@@ -2,10 +2,12 @@ package repositories
 
 import (
 	"log"
+
 	"github.com/maxintelinno/sport-hub-profile/internal/models"
 
 	"gorm.io/gorm"
 )
+
 type UserRepository interface {
 	GetUserByID(id string) (*models.User, error)
 	GetStatsByUserID(userID string) (*models.ProfileStats, error)
@@ -184,7 +186,7 @@ func (r *userRepository) GetUserByPhone(phone string) (*models.User, error) {
 
 func (r *userRepository) UpdatePasswordByPhone(phone string, passwordHash string) error {
 	log.Printf("UserRepository: Updating password for phone: %s", phone)
-	result := r.db.Model(&models.User{}).Where("phone = ?", phone).Update("password_hash", passwordHash)
+	result := r.db.Model(&models.User{}).Where("phone = ?", phone).Updates(map[string]interface{}{"password_hash": passwordHash, "must_change_password": true})
 	if result.Error != nil {
 		log.Printf("UserRepository: Error updating password for phone %s: %v", phone, result.Error)
 		return result.Error
