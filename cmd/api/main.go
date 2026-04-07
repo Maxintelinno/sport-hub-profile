@@ -49,7 +49,7 @@ func main() {
 	// Services
 	profileService := services.NewProfileService(userRepo)
 	reportService := services.NewReportService(reportRepo)
-	dashboardService := services.NewDashboardService(userRepo, dashboardRepo)
+	dashboardService := services.NewDashboardService(userRepo, dashboardRepo, ownerStaffRepo)
 	authService := services.NewAuthService(userRepo)
 	bankService := services.NewBankService(bankRepo, userRepo, payoutRepo)
 	ownerStaffService := services.NewOwnerStaffService(ownerStaffRepo)
@@ -78,6 +78,9 @@ func main() {
 	v1Auth.GET("/profile", profileHandler.GetProfile)
 	v1Auth.GET("/reports/revenue", reportHandler.GetRevenueReport)
 	v1Auth.GET("/owner/dashboard", dashboardHandler.GetDashboard)
+	v1Auth.GET("/staff/dashboard", dashboardHandler.GetStaffDashboard)
+	v1Auth.GET("/manager/dashboard", dashboardHandler.GetStaffDashboard)
+	v1Auth.GET("/accountant/dashboard", dashboardHandler.GetStaffDashboard)
 	
 	// Bank Account routes
 	v1Auth.GET("/owner/bank-accounts", bankHandler.GetBankAccounts)

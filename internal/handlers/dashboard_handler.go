@@ -8,6 +8,7 @@ import (
 
 type DashboardHandler interface {
 	GetDashboard(c echo.Context) error
+	GetStaffDashboard(c echo.Context) error
 }
 
 type dashboardHandler struct {
@@ -32,6 +33,24 @@ func (h *dashboardHandler) GetDashboard(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{
 		"status":  "success",
 		"message": "Owner dashboard retrieved successfully",
+		"data":    response,
+	})
+}
+
+func (h *dashboardHandler) GetStaffDashboard(c echo.Context) error {
+	userID, ok := c.Get("user_id").(string)
+	if !ok || userID == "" {
+		return c.JSON(http.StatusUnauthorized, echo.Map{"message": "Unauthorized or invalid user ID"})
+	}
+
+	response, err := h.dashboardService.GetStaffDashboard(userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"message": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"status":  "success",
+		"message": "Staff dashboard retrieved successfully",
 		"data":    response,
 	})
 }

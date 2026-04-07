@@ -4,21 +4,82 @@ import (
 	"fmt"
 	"math"
 	"time"
+
 	"github.com/maxintelinno/sport-hub-profile/internal/models"
 	"github.com/maxintelinno/sport-hub-profile/internal/repositories"
 )
 
 type DashboardService interface {
 	GetDashboard(userID string) (*models.DashboardResponse, error)
+	GetStaffDashboard(staffUserID string) (*models.DashboardResponse, error)
 }
 
 type dashboardService struct {
-	userRepo      repositories.UserRepository
-	dashboardRepo repositories.DashboardRepository
+	userRepo       repositories.UserRepository
+	dashboardRepo  repositories.DashboardRepository
+	ownerStaffRepo repositories.OwnerStaffRepository
 }
 
-func NewDashboardService(userRepo repositories.UserRepository, dashboardRepo repositories.DashboardRepository) DashboardService {
-	return &dashboardService{userRepo: userRepo, dashboardRepo: dashboardRepo}
+func NewDashboardService(userRepo repositories.UserRepository, dashboardRepo repositories.DashboardRepository, ownerStaffRepo repositories.OwnerStaffRepository) DashboardService {
+	return &dashboardService{userRepo: userRepo, dashboardRepo: dashboardRepo, ownerStaffRepo: ownerStaffRepo}
+}
+
+func (s *dashboardService) GetStaffDashboard(staffUserID string) (*models.DashboardResponse, error) {
+	// 1. Get Owner Info
+	user, err := s.userRepo.GetUserByID(staffUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	avatarInitial := ""
+	if len(user.Fullname) > 0 {
+		avatarInitial = string([]rune(user.Fullname)[0])
+	}
+
+	// 1.5 Get Owner ID for this staff
+	ownerID, err := s.ownerStaffRepo.GetOwnerIDByStaffUserID(staffUserID)
+	if err != nil {
+		return nil, fmt.Errorf("could not find associated owner: %w", err)
+	}
+
+	// 2. Get Data from Repository (using ownerID instead of staffUserID)
+	summaryStats, _ := s.dashboardRepo.GetSummaryStats(ownerID)
+	trend, _ := s.dashboardRepo.GetRevenueTrend(ownerID)
+	todayBookings, _ := s.dashboardRepo.GetTodayBookingCount(ownerID)
+
+	if summaryStats == nil {
+		summaryStats = &models.DashboardSummary{}
+	}
+
+	response := &models.DashboardResponse{
+		Owner: models.DashboardOwner{
+			ID:            user.ID,
+			Fullname:      user.Fullname,
+			Phone:         user.Phone,
+			AvatarInitial: avatarInitial,
+		},
+		Summary:          *summaryStats,
+		BookingCount:     summaryStats.BookingCount,
+		FieldCount:       summaryStats.FieldCount,
+		RevenueGrowthPct: summaryStats.RevenueGrowthPct,
+		TotalRevenue:     summaryStats.TotalRevenue,
+		RevenueTrend7d:   trend,
+		Alerts:           []models.DashboardAlert{},
+		NextActions:      []models.DashboardAction{},
+	}
+
+	// Alert: No bookings today
+	if todayBookings == 0 {
+		response.Alerts = append(response.Alerts, models.DashboardAlert{
+			Type:       "warning",
+			Title:      "วันนี้ยังไม่มีการจอง",
+			Message:    "เปิดโปรเพื่อเพิ่มลูกค้าทันที",
+			ActionText: "สร้างโปรโมชัน",
+			ActionType: "open_promotion",
+		})
+	}
+
+	return response, nil
 }
 
 func (s *dashboardService) GetDashboard(userID string) (*models.DashboardResponse, error) {

@@ -10,6 +10,7 @@ import (
 type OwnerStaffRepository interface {
 	GetStaffByOwnerID(ownerID string) ([]models.OwnerStaffResponse, error)
 	UpdateStaffStatus(ownerID string, staffUserID string, status string) error
+	GetOwnerIDByStaffUserID(staffUserID string) (string, error)
 }
 
 type ownerStaffRepository struct {
@@ -73,4 +74,21 @@ func (r *ownerStaffRepository) UpdateStaffStatus(ownerID string, staffUserID str
 
 		return nil
 	})
+}
+
+func (r *ownerStaffRepository) GetOwnerIDByStaffUserID(staffUserID string) (string, error) {
+	if !isUUID(staffUserID) {
+		return "", gorm.ErrRecordNotFound
+	}
+
+	var ownerStaff models.OwnerStaff
+	log.Printf("OwnerStaffRepository: Finding owner ID for staff user ID: %s", staffUserID)
+	
+	err := r.db.Where("staff_user_id = ? AND status = ?", staffUserID, "active").First(&ownerStaff).Error
+	if err != nil {
+		log.Printf("OwnerStaffRepository: Error finding owner for staff %s: %v", staffUserID, err)
+		return "", err
+	}
+
+	return ownerStaff.OwnerUserID, nil
 }
