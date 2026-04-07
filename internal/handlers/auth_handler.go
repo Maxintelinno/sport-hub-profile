@@ -13,6 +13,7 @@ type AuthHandler interface {
 	CheckPhone(c echo.Context) error
 	UpdatePassword(c echo.Context) error
 	UpdatePin(c echo.Context) error
+	ValidatePin(c echo.Context) error
 }
 
 type authHandler struct {
@@ -122,4 +123,61 @@ func (h *authHandler) UpdatePin(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, models.AuthResponse{Message: "PIN updated successfully"})
+}
+
+func (h *authHandler) ValidatePin(c echo.Context) error {
+	var req models.ValidatePinRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.ValidatePinResponse{
+			Message: "Invalid request body",
+			IsValid: false,
+		})
+	}
+
+	if req.Phone == "" || req.Pin == "" {
+		return c.JSON(http.StatusBadRequest, models.ValidatePinResponse{
+			Message: "Phone and pin are required",
+			IsValid: false,
+		})
+	}
+
+	if len(req.Pin) != 6 {
+		return c.JSON(http.StatusBadRequest, models.ValidatePinResponse{
+			Message: "PIN must be exactly 6 digits",
+			IsValid: false,
+		})
+	}
+
+	isValid, err := h.authService.ValidatePin(req.Phone, req.Pin)
+	if err != nil {
+		switch err.Error() {
+		case "user not found":
+			return c.JSON(http.StatusNotFound, models.ValidatePinResponse{
+				Message: "User not found",
+				IsValid: false,
+			})
+		case "pin not set":
+			return c.JSON(http.StatusBadRequest, models.ValidatePinResponse{
+				Message: "PIN has not been set for this account",
+				IsValid: false,
+			})
+		default:
+			return c.JSON(http.StatusInternalServerError, models.ValidatePinResponse{
+				Message: "Error validating PIN",
+				IsValid: false,
+			})
+		}
+	}
+
+	if !isValid {
+		return c.JSON(http.StatusUnauthorized, models.ValidatePinResponse{
+			Message: "Invalid PIN",
+			IsValid: false,
+		})
+	}
+
+	return c.JSON(http.StatusOK, models.ValidatePinResponse{
+		Message: "PIN is valid",
+		IsValid: true,
+	})
 }

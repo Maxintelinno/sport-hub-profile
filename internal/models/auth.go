@@ -27,3 +27,13 @@ type UpdatePinRequest struct {
 	Phone  string `json:"phone" validate:"required"`
 	NewPin string `json:"new_pin" validate:"required,len=6"`
 }
+
+type ValidatePinRequest struct {
+	Phone string `json:"phone" validate:"required"`
+	Pin   string `json:"pin" validate:"required,len=6"`
+}
+
+type ValidatePinResponse struct {
+	Message string `json:"message"`
+	IsValid bool   `json:"is_valid"`
+}

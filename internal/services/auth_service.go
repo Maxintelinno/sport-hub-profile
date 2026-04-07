@@ -18,6 +18,7 @@ type AuthService interface {
 	CheckPhone(phone string) (bool, error)
 	UpdatePassword(phone string, newPassword string) error
 	UpdatePin(phone string, newPin string) error
+	ValidatePin(phone string, pin string) (bool, error)
 }
 
 type authService struct {
@@ -138,6 +139,33 @@ func (s *authService) UpdatePin(phone string, newPin string) error {
 	}
 
 	return s.userRepo.UpdatePinByPhone(phone, string(hashedPin))
+}
+
+func (s *authService) ValidatePin(phone string, pin string) (bool, error) {
+	log.Printf("AuthService: Validating PIN for phone: %s", phone)
+
+	// 1. Get user by phone
+	user, err := s.userRepo.GetUserByPhone(phone)
+	if err != nil {
+		log.Printf("AuthService: User not found for phone %s: %v", phone, err)
+		return false, errors.New("user not found")
+	}
+
+	// 2. Check that pin_hash exists
+	if user.PinHash == "" {
+		log.Printf("AuthService: No PIN set for phone %s", phone)
+		return false, errors.New("pin not set")
+	}
+
+	// 3. Compare PIN with stored hash
+	err = bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(pin))
+	if err != nil {
+		log.Printf("AuthService: Invalid PIN for phone %s", phone)
+		return false, nil
+	}
+
+	log.Printf("AuthService: PIN validated successfully for phone %s", phone)
+	return true, nil
 }
 
 func (s *authService) generateOTP() (string, error) {

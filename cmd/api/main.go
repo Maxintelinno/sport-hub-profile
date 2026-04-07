@@ -71,6 +71,7 @@ func main() {
 	e.POST("/v1/auth/check-phone", authHandler.CheckPhone)
 	e.POST("/v1/auth/update-password", authHandler.UpdatePassword)
 	e.POST("/v1/auth/update-pin", authHandler.UpdatePin)
+	e.POST("/v1/auth/validate-pin", authHandler.ValidatePin)
 	
 	// Authenticated routes
 	v1Auth := e.Group("/v1")
